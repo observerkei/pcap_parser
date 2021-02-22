@@ -1,3 +1,12 @@
+/**
+ * develop: observerkei
+ * time: 2021.02.12
+ * version: v1.0
+ * eg: 
+ *		Support .pcap format.
+ *		Use of this code indicates acceptance of the LGPL agreement
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
