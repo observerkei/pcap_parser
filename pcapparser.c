@@ -1,10 +1,6 @@
 /**
- * develop: observerkei
- * time: 2021.02.12
- * version: v1.0
- * eg: 
- *		Support .pcap format.
- *		Use of this code indicates acceptance of the BSD(original BSD license、FreeBSD license、Original BSD license) agreement
+ *	Support .pcap format.
+ *	Use of this code indicates acceptance of the MIT agreement
  */
 
 #include <stdio.h>
