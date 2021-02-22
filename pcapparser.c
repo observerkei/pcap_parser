@@ -285,16 +285,11 @@ static int pcap_reader_create(const char *fname)
 
 static int port_to_dir(uint16_t sport, uint16_t dport)
 {
-	static int flag = 0;
 	static uint16_t private_sport = 0;
 	static uint16_t private_dport = 0;
 
-	if (!flag) {
-		flag = ~flag;
-		private_sport = sport;
-		private_dport = dport;
-	} else if (!((sport == private_sport && dport == private_sport)
-			|| (dport == private_sport && sport == private_dport))) {
+	if (!((sport == private_sport && dport == private_dport)
+				|| (dport == private_sport && sport == private_dport))) {
 		private_sport = sport;
 		private_dport = dport;
 	}
