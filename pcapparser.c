@@ -239,9 +239,7 @@ static int hdr_parser_tcp(const pkt_t *pkt, tcp_t **tcp)
 
 		pcap_parser_dbg("payload_len:%4u, payload_data:", payload_len);
 		for (j = 0; j < payload_len; ++j) {
-			if (j > 20) {
-				break;
-			}
+			(j > 20) ? ({break;}) : (void)0;
 			pcap_parser_dbg(" %c", is_print(payload_data[j]) ? payload_data[j] : '.');
 		}
 		pcap_parser_dbg("\n");
