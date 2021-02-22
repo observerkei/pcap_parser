@@ -1,12 +1,13 @@
-#include "pcapparser.h"
-#include <cstdio>
-#include <cstdlib>
-#include <cstdint>
-#include <cstring>
-#include <cctype>
-#include <cstddef>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <ctype.h>
+#include <stddef.h>
 #include <arpa/inet.h>
 #include <error.h>
+
+#include "pcapparser.h"
 
 #define  PCAP_FILE_MAGIC_1   0Xd4
 #define  PCAP_FILE_MAGIC_2   0Xc3
@@ -17,6 +18,9 @@
 #define IP2_LEN		4
 #define LOOPBACK	4
 #define ETHERNET	14
+
+#define SKB_TO_SERVER	1
+#define SKB_TO_CLIENT	2
 
 #define is_print(ch) ((('a' <= (ch)) && ((ch) <= 'z')) \
 		|| (('A' <= (ch)) && ((ch) <= 'Z')) \
@@ -29,7 +33,7 @@
 			fprintf(stderr, fmt, ##arg); \
 		} \
 	}
-char g_pcap_parser_dbg_enable = 1;
+
 /*pcap file header*/
 typedef struct pcap_file_header_st {
     uint8_t   magic[4];
@@ -91,6 +95,8 @@ static fpcap_t s_fpcap = {0};
 static pkt_t *s_pkt = NULL;
 static tcp_t *s_tcp = NULL;
 
+char g_pcap_parser_dbg_enable = 1;
+
 static int pcap_read(const char *fname, fpcap_t *fpcap)
 {
 	if (!fname || !fpcap) {
@@ -131,10 +137,12 @@ static int pcap_parser_hdr(const fpcap_t *fpcap, pkt_t **pkt)
 	if (!fpcap || !pkt || *pkt) {
 		return -1;
 	}
+	size_t i = 0;
+	size_t recort_count = 0;
 	size_t pkthdr_count = 0;
 	pcap_pkthdr_t *p_pcap_pkthdr = NULL;
 
-	for (size_t recort_count = sizeof(pcap_file_header_t);
+	for (recort_count = sizeof(pcap_file_header_t);
 			recort_count < fpcap->count;) {
 		p_pcap_pkthdr = (pcap_pkthdr_t *)(fpcap->buf + recort_count);
 		++pkthdr_count;
@@ -150,7 +158,7 @@ static int pcap_parser_hdr(const fpcap_t *fpcap, pkt_t **pkt)
 
 	(*pkt)->count = pkthdr_count;
 
-	for (size_t i = 0, recort_count = sizeof(pcap_file_header_t); 
+	for (i = 0, recort_count = sizeof(pcap_file_header_t); 
 			i < (*pkt)->count; ++i) {
 		(*pkt)->hdr[i] = (pcap_pkthdr_t *)(fpcap->buf + recort_count);
 		recort_count += sizeof(pcap_pkthdr_t) + (*pkt)->hdr[i]->caplen;
@@ -164,6 +172,7 @@ static int hdr_parser_tcp(const pkt_t *pkt, tcp_t **tcp)
 	if (!pkt || !tcp || *tcp) {
 		return -1;
 	}
+	size_t i = 0, j = 0;
 
 	*tcp = (tcp_t *)malloc(sizeof(tcp_t) + pkt->count * sizeof(msg_t));
 	if (NULL == tcp) {
@@ -174,7 +183,7 @@ static int hdr_parser_tcp(const pkt_t *pkt, tcp_t **tcp)
 	(*tcp)->count = pkt->count;
 
 
-	for (size_t i = 0; i < pkt->count; ++i) {	
+	for (i = 0; i < pkt->count; ++i) {	
 		pcap_parser_dbg("[%4lu] ", i+1);
 
 		uint8_t ethernet_len = ETHERNET;
@@ -224,11 +233,11 @@ static int hdr_parser_tcp(const pkt_t *pkt, tcp_t **tcp)
 				(*tcp)->msg[i].psh, (*tcp)->msg[i].rst, (*tcp)->msg[i].syn, (*tcp)->msg[i].fin);
 
 		pcap_parser_dbg("payload_len:%4u, payload_data:", payload_len);
-		for (int i = 0; i < payload_len; ++i) {
-			if (i > 20) {
+		for (j = 0; j < payload_len; ++j) {
+			if (j > 20) {
 				break;
 			}
-			pcap_parser_dbg(" %c", is_print(payload_data[i]) ? payload_data[i] : '.');
+			pcap_parser_dbg(" %c", is_print(payload_data[j]) ? payload_data[j] : '.');
 		}
 		pcap_parser_dbg("\n");
 	}
@@ -236,7 +245,7 @@ static int hdr_parser_tcp(const pkt_t *pkt, tcp_t **tcp)
 	return 0;
 }
 
-void pcap_reader_destory(void)
+static void pcap_reader_destory(void)
 {
 	if (s_fpcap.buf) {
 		free(s_fpcap.buf);
@@ -252,7 +261,7 @@ void pcap_reader_destory(void)
 	}
 }
 
-int pcap_reader_create(const char *fname) 
+static int pcap_reader_create(const char *fname) 
 {
 	if (!fname) {
 		pcap_parser_dbg("NULL == fname\n");
@@ -271,20 +280,66 @@ int pcap_reader_create(const char *fname)
 	return 0;
 }
 
-int main(int argc, char const* argv[])
+static int port_to_dir(uint16_t sport, uint16_t dport)
 {
-	if (2 != argc) {
+	static int flag = 0;
+	static uint16_t private_sport = 0;
+	static uint16_t private_dport = 0;
+
+	if (!flag) {
+		flag = ~flag;
+		private_sport = sport;
+		private_dport = dport;
+	} else if (!((sport == private_sport && dport == private_sport)
+			|| (dport == private_sport && sport == private_dport))) {
+		private_sport = sport;
+		private_dport = dport;
+	}
+
+	if (sport == private_sport) {
+		return SKB_TO_SERVER;
+	} else if (dport == private_sport) {
+		return SKB_TO_CLIENT;
+	} else {
+		return -1;
+	}
+}
+
+static int tcp_parser_docker(const char *tcp_arg, parser_docker_t hook, char *hook_hdr)
+{
+	if (tcp_arg == NULL || hook == NULL) {
+		return -1;
+	}
+	const tcp_t *tcp = (const tcp_t *)tcp_arg;
+	int i = 0;
+	for (i = 0; i < tcp->count; ++i) {
+		if (hook(hook_hdr, tcp->msg[i].payload_data, tcp->msg[i].payload_len,
+					port_to_dir(tcp->msg[i].sport, tcp->msg[i].dport))) {
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+int pcap_parser(const char *pcap_file, parser_docker_t hook, char *hook_hdr)
+{
+	if (NULL == pcap_file) {
 		pcap_parser_dbg("use ./app pcap_filename\n");
 		return -1;
 	}
 
-	if (pcap_reader_create(argv[1])) {
+	if (pcap_reader_create(pcap_file)) {
 		goto out;
 	}
 
+	if (tcp_parser_docker((const char *)s_tcp, hook, hook_hdr)) {
+		goto out;
+	}
 
 out:
 	pcap_reader_destory();
 
 	return 0;
 }
+
