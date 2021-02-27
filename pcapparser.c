@@ -355,13 +355,13 @@ int tcp_insert(char *tcp_arg, int32_t idx, const char *insert_msg)
 		pcap_parser_dbg("%s realloc fail new_tcp\n", __FUNCTION__);
 		return -1;
 	}
-	++new_tcp->count;
 
-	size_t i = 0;
-	for (i = new_tcp->count-1; i > idx; --i) {
+	int32_t i = 0;
+	for (i = new_tcp->count-1; i >= idx; --i) {
 		new_tcp->msg[i] = new_tcp->msg[i-1];
 	}
-	new_tcp->msg[i] = insert;
+	new_tcp->msg[idx] = insert;
+	++new_tcp->count;
 
 	return 0;
 }
