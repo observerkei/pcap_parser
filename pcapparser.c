@@ -100,7 +100,9 @@ static fpcap_t s_fpcap = {0};
 static pkt_t *s_pkt = NULL;
 static tcp_t *s_tcp = NULL;
 
-char g_pcap_parser_dbg_enable = 1;
+uint8_t g_pcap_parser_dbg_enable = 1;
+static uint8_t s_tcp_insert_close_flag = 0;
+
 
 static int pcap_read(const char *fname, fpcap_t *fpcap)
 {
@@ -365,7 +367,7 @@ int tcp_insert(char *tcp_arg, int32_t idx, const char *insert_msg)
 // 给pcap包插入一个结束标志(插入一条拷贝最后一条数据，并置位 fin/res 标志位的空数据)
 int tcp_insert_close(void)
 {
-	return tcp_insert((char *)get_tcp(), -1, NULL);
+	return s_tcp_insert_close_flag = 1;
 }
 
 int pcap_parser(const char *pcap_file, parser_docker_t hook, char *hook_hdr)
@@ -377,6 +379,10 @@ int pcap_parser(const char *pcap_file, parser_docker_t hook, char *hook_hdr)
 
 	if (pcap_reader_create(pcap_file)) {
 		goto out;
+	}
+
+	if (s_tcp_insert_close_flag) {
+		tcp_insert((char *)get_tcp(), -1, NULL);
 	}
 
 	if (tcp_parser_docker((const char *)s_tcp, hook, hook_hdr)) {
