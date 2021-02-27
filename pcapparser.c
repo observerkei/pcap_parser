@@ -59,12 +59,12 @@ typedef struct pcap_pkthdr_st {
 	uint8_t    data[0];
 } pcap_pkthdr_t;
 
-typedef struct {
+typedef struct fpcap_st {
 	size_t count;
 	uint8_t *buf;
 } fpcap_t;
 
-typedef struct {
+typedef struct pkt_st {
 	size_t count;
 	pcap_pkthdr_t *hdr[0];
 } pkt_t;
@@ -318,6 +318,54 @@ static int tcp_parser_docker(const char *tcp_arg, parser_docker_t hook, char *ho
 	}
 
 	return 0;
+}
+
+const char *get_tcp(void)
+{
+	return (const char *)s_tcp;
+}
+
+int tcp_insert(char *tcp_arg, int32_t idx, const char *insert_msg)
+{
+	if (NULL == tcp_arg) {
+		return -1;
+	}
+	tcp_t *tcp = (tcp_t *)tcp_arg;
+	if (idx < 0) {
+		idx = tcp->count;
+	}
+	msg_t insert = {0};
+	if (NULL == insert_msg) {
+		insert.fin = 1;
+		insert.rst = 1;
+		insert.sip   = tcp->msg[(0==idx)?0:(idx-1)].sip;
+		insert.dip   = tcp->msg[(0==idx)?0:(idx-1)].dip;
+		insert.sport = tcp->msg[(0==idx)?0:(idx-1)].sport;
+		insert.dport = tcp->msg[(0==idx)?0:(idx-1)].dport;
+	} else {
+		memcpy(&insert, insert_msg, sizeof(msg_t));
+	}
+
+	tcp_t *new_tcp = realloc(tcp, sizeof(tcp->count)+(tcp->count+1)*sizeof(msg_t));
+	if (NULL == new_tcp) {
+		pcap_parser_dbg("realloc fail new_tcp\n");
+		return -1;
+	}
+	++new_tcp->count;
+
+	size_t i = 0;
+	for (i = new_tcp->count-1; i > idx; --i) {
+		new_tcp->msg[i] = new_tcp->msg[i-1];
+	}
+	new_tcp->msg[i] = insert;
+
+	return 0;
+}
+
+// 给pcap包插入一个结束标志(插入一条拷贝最后一条数据，并置位 fin/res 标志位的空数据)
+int tcp_insert_close(void)
+{
+	return tcp_insert((char *)get_tcp(), -1, NULL);
 }
 
 int pcap_parser(const char *pcap_file, parser_docker_t hook, char *hook_hdr)
