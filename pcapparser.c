@@ -333,7 +333,7 @@ int tcp_insert(char *tcp_arg, int32_t idx, const char *insert_msg)
 		return -1;
 	}
 	tcp_t *tcp = (tcp_t *)tcp_arg;
-	if (idx < 0) {
+	if (idx < 0 || tcp->count <= idx) {
 		idx = tcp->count;
 	}
 	msg_t insert = {0};
