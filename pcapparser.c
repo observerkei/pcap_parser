@@ -373,7 +373,7 @@ int tcp_insert(char *tcp_arg, typeof(s_tcp->count) idx, const char *insert_msg)
 	return 0;
 }
 
-// 给pcap包插入一个结束标志(插入一条拷贝最后一条数据，并置位 fin/res 标志位的空数据)
+/* 给pcap包插入一个结束标志(插入一条拷贝最后一条数据，并置位 fin/res 标志位的空数据) */
 int tcp_insert_close(void)
 {
 	return s_tcp_insert_close_flag = 1;

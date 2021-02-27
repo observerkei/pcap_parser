@@ -19,7 +19,7 @@ typedef int (*parser_docker_t)(char *, const uint8_t *, uint16_t, uint8_t);
   */
 extern int pcap_parser(const char *pcap_file, parser_docker_t hook, char *hook_hdr);
 
-// 给pcap包插入一个结束标志(插入一条拷贝最后一条数据，并置位 fin/res 标志位的空数据)
+/* 给pcap包插入一个结束标志(插入一条拷贝最后一条数据，并置位 fin/res 标志位的空数据) */
 extern int tcp_insert_close(void);
 
 #ifdef __cplusplus
