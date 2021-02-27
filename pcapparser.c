@@ -327,12 +327,12 @@ const char *get_tcp(void)
 	return (const char *)s_tcp;
 }
 
-typeof(s_tcp->count) get_tcp_count(void)
+size_t get_tcp_count(void)
 {
 	return s_tcp->count;
 }
 
-int tcp_insert(char *tcp_arg, typeof(s_tcp->count) idx, const char *insert_msg)
+int tcp_insert(char *tcp_arg, size_t idx, const char *insert_msg)
 {
 	if (NULL == tcp_arg) {
 		pcap_parser_dbg("%s arg fail", __FUNCTION__);
