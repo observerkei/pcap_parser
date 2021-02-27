@@ -327,7 +327,12 @@ const char *get_tcp(void)
 	return (const char *)s_tcp;
 }
 
-int tcp_insert(char *tcp_arg, int32_t idx, const char *insert_msg)
+typeof(s_tcp->count) get_tcp_count(void)
+{
+	return s_tcp->count;
+}
+
+int tcp_insert(char *tcp_arg, typeof(s_tcp->count) idx, const char *insert_msg)
 {
 	if (NULL == tcp_arg) {
 		pcap_parser_dbg("%s arg fail", __FUNCTION__);
@@ -356,10 +361,12 @@ int tcp_insert(char *tcp_arg, int32_t idx, const char *insert_msg)
 		return -1;
 	}
 
-	int32_t i = 0;
-	for (i = new_tcp->count-1; i >= idx; --i) {
+	typeof(new_tcp->count) i = 0;
+	for (i = new_tcp->count-1; i > idx; --i) {
 		new_tcp->msg[i] = new_tcp->msg[i-1];
 	}
+	new_tcp->msg[i] = new_tcp->msg[i-1];
+
 	new_tcp->msg[idx] = insert;
 	++new_tcp->count;
 
@@ -383,7 +390,7 @@ int pcap_parser(const char *pcap_file, parser_docker_t hook, char *hook_hdr)
 		goto out;
 	}
 
-	if (s_tcp_insert_close_flag && tcp_insert((char *)get_tcp(), -1, NULL)) {
+	if (s_tcp_insert_close_flag && tcp_insert((char *)get_tcp(), get_tcp_count(), NULL)) {
 		goto out;
 	}
 
