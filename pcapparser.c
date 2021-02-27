@@ -41,21 +41,21 @@
 
 /*pcap file header*/
 typedef struct pcap_file_header_st {
-    uint8_t   magic[4];
-    uint16_t   version_major;
-    uint16_t   version_minor;
-    int32_t    thiszone;      /*时区修正*/
-    uint32_t   sigfigs;       /*精确时间戳*/
-    uint32_t   snaplen;       /*抓包最大长度*/
-    uint32_t   linktype;      /*链路类型*/
+	uint8_t   magic[4];
+	uint16_t   version_major;
+	uint16_t   version_minor;
+	int32_t    thiszone;      /*时区修正*/
+	uint32_t   sigfigs;       /*精确时间戳*/
+	uint32_t   snaplen;       /*抓包最大长度*/
+	uint32_t   linktype;      /*链路类型*/
 } pcap_file_header_t;
 
 /*pcap packet header*/
 typedef struct pcap_pkthdr_st {
-    uint32_t   seconds;     /*秒数*/
-    uint32_t   u_seconds;   /*毫秒数*/
-    uint32_t   caplen;      /*数据包长度*/
-    uint32_t   len;         /*文件数据包长度*/
+	uint32_t   seconds;     /*秒数*/
+	uint32_t   u_seconds;   /*毫秒数*/
+	uint32_t   caplen;      /*数据包长度*/
+	uint32_t   len;         /*文件数据包长度*/
 	uint8_t    data[0];
 } pcap_pkthdr_t;
 
@@ -346,7 +346,7 @@ int tcp_insert(char *tcp_arg, size_t idx, const char *insert_msg)
 	if (NULL == insert_msg) {
 		insert.fin = 1;
 		insert.rst = 1;
-		typeof(tcp->count) insert_idx = (0==idx)?0:(idx-1);
+		size_t insert_idx = (0==idx)?0:(idx-1);
 		insert.sip   = tcp->msg[insert_idx].sip;
 		insert.dip   = tcp->msg[insert_idx].dip;
 		insert.sport = tcp->msg[insert_idx].sport;
@@ -361,7 +361,7 @@ int tcp_insert(char *tcp_arg, size_t idx, const char *insert_msg)
 		return -1;
 	}
 
-	typeof(new_tcp->count) i = 0;
+	size_t i = 0;
 	for (i = new_tcp->count-1; i > idx; --i) {
 		new_tcp->msg[i] = new_tcp->msg[i-1];
 	}
