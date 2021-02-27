@@ -340,15 +340,16 @@ int tcp_insert(char *tcp_arg, int32_t idx, const char *insert_msg)
 	if (NULL == insert_msg) {
 		insert.fin = 1;
 		insert.rst = 1;
-		insert.sip   = tcp->msg[(0==idx)?0:(idx-1)].sip;
-		insert.dip   = tcp->msg[(0==idx)?0:(idx-1)].dip;
-		insert.sport = tcp->msg[(0==idx)?0:(idx-1)].sport;
-		insert.dport = tcp->msg[(0==idx)?0:(idx-1)].dport;
+		typeof(tcp->count) insert_idx = (0==idx)?0:(idx-1);
+		insert.sip   = tcp->msg[insert_idx].sip;
+		insert.dip   = tcp->msg[insert_idx].dip;
+		insert.sport = tcp->msg[insert_idx].sport;
+		insert.dport = tcp->msg[insert_idx].dport;
 	} else {
 		memcpy(&insert, insert_msg, sizeof(msg_t));
 	}
 
-	tcp_t *new_tcp = realloc(tcp, sizeof(tcp->count)+(tcp->count+1)*sizeof(msg_t));
+	tcp_t *new_tcp = (tcp_t *)realloc(tcp, sizeof(tcp->count)+(tcp->count+1)*sizeof(msg_t));
 	if (NULL == new_tcp) {
 		pcap_parser_dbg("realloc fail new_tcp\n");
 		return -1;
