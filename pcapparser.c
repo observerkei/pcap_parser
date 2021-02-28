@@ -365,8 +365,6 @@ int tcp_insert(char *tcp_arg, size_t idx, const char *insert_msg)
 	for (i = new_tcp->count-1; i > idx; --i) {
 		new_tcp->msg[i] = new_tcp->msg[i-1];
 	}
-	new_tcp->msg[i] = new_tcp->msg[i-1];
-
 	new_tcp->msg[idx] = insert;
 	++new_tcp->count;
 
