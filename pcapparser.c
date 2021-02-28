@@ -368,8 +368,6 @@ int tcp_insert(char **tcp_arg, size_t idx, const char *insert_msg)
 	new_tcp->msg[idx] = insert;
 	++new_tcp->count;
 
-	*tcp_arg = new_tcp;
-
 	return 0;
 }
 
@@ -390,11 +388,11 @@ int pcap_parser(const char *pcap_file, parser_docker_t hook, char *hook_hdr)
 		goto out;
 	}
 
-	if (s_tcp_insert_close_flag && tcp_insert((char *)get_tcp(), get_tcp_count(), NULL)) {
+	if (s_tcp_insert_close_flag && tcp_insert((char **)(&s_tcp), get_tcp_count(), NULL)) {
 		goto out;
 	}
 
-	if (tcp_parser_docker((const char **)&s_tcp, hook, hook_hdr)) {
+	if (tcp_parser_docker(get_tcp(), hook, hook_hdr)) {
 		goto out;
 	}
 
