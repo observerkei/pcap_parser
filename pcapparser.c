@@ -332,13 +332,13 @@ size_t get_tcp_count(void)
 	return s_tcp->count;
 }
 
-int tcp_insert(char *tcp_arg, size_t idx, const char *insert_msg)
+int tcp_insert(char **tcp_arg, size_t idx, const char *insert_msg)
 {
-	if (NULL == tcp_arg) {
+	if (NULL == tcp_arg || NULL == *tcp_arg) {
 		pcap_parser_dbg("%s arg fail", __FUNCTION__);
 		return -1;
 	}
-	tcp_t *tcp = (tcp_t *)tcp_arg;
+	tcp_t *tcp = (tcp_t *)(*tcp_arg);
 	if (idx < 0 || tcp->count < idx) {
 		idx = tcp->count;
 	}
@@ -368,6 +368,8 @@ int tcp_insert(char *tcp_arg, size_t idx, const char *insert_msg)
 	new_tcp->msg[idx] = insert;
 	++new_tcp->count;
 
+	*tcp_arg = new_tcp;
+
 	return 0;
 }
 
@@ -392,7 +394,7 @@ int pcap_parser(const char *pcap_file, parser_docker_t hook, char *hook_hdr)
 		goto out;
 	}
 
-	if (tcp_parser_docker((const char *)s_tcp, hook, hook_hdr)) {
+	if (tcp_parser_docker((const char **)&s_tcp, hook, hook_hdr)) {
 		goto out;
 	}
 
