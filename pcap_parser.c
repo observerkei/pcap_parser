@@ -12,7 +12,7 @@
 #include <arpa/inet.h>
 #include <error.h>
 
-#include "pcapparser.h"
+#include "pcap_parser.h"
 
 #define  PCAP_FILE_MAGIC_1   0Xd4
 #define  PCAP_FILE_MAGIC_2   0Xc3

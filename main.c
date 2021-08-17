@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "pcapparser.h"
+#include "pcap_parser.h"
 
 
 int test_hook(char *hdr, const uint8_t *data, uint16_t len, uint8_t dir)
